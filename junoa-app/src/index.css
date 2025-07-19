@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Custom dark green theme */
+:root {
+  --dark-green: #0a0f0a;
+  --dark-green-light: #111611;
+  --dark-green-lighter: #0f1a0f;
+}
+
+/* Custom utility classes */
+.bg-dark-green {
+  background-color: var(--dark-green);
+}
+
+.bg-dark-green-light {
+  background-color: var(--dark-green-light);
+}
+
+.bg-dark-green-lighter {
+  background-color: var(--dark-green-lighter);
+}
