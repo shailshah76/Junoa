@@ -89,7 +89,10 @@ export const journalAPI = {
 
   // Create new journal entry
   createEntry: async (entryData) => {
+    console.log('🔍 API - Creating journal entry with data:', entryData);
+    console.log('🔍 API - Token exists:', !!localStorage.getItem('token'));
     const response = await api.post('/api/journal/entries', entryData);
+    console.log('✅ API - Journal entry created successfully:', response.data);
     return response.data;
   },
 
@@ -101,8 +104,21 @@ export const journalAPI = {
 
   // Delete journal entry
   deleteEntry: async (entryId) => {
-    const response = await api.delete(`/api/journal/entries/${entryId}`);
-    return response.data;
+    console.log('🔍 API - Deleting journal entry:', entryId);
+    console.log('🔍 API - Token exists:', !!localStorage.getItem('token'));
+    console.log('🔍 API - Token value:', localStorage.getItem('token'));
+    console.log('🔍 API - Making DELETE request to:', `/api/journal/entries/${entryId}`);
+    
+    try {
+      const response = await api.delete(`/api/journal/entries/${entryId}`);
+      console.log('✅ API - Journal entry deleted successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ API - Delete request failed:', error);
+      console.error('❌ API - Error response:', error.response?.data);
+      console.error('❌ API - Error status:', error.response?.status);
+      throw error;
+    }
   },
 
   // Get AI insights for entry

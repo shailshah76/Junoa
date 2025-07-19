@@ -389,18 +389,43 @@ router.put('/entries/:id', auth, checkOwnership(JournalEntry), updateEntryValida
 // @access  Private
 router.delete('/entries/:id', auth, checkOwnership(JournalEntry), async (req, res) => {
   try {
+    console.log('🗑️ DELETE ROUTE - Entry ID:', req.params.id);
+    console.log('🗑️ DELETE ROUTE - User ID:', req.user.id);
+    
     const entry = req.resource; // Set by checkOwnership middleware
+    console.log('🗑️ DELETE ROUTE - Entry found:', !!entry);
+    console.log('🗑️ DELETE ROUTE - Entry before delete:', {
+      _id: entry._id,
+      isDeleted: entry.isDeleted,
+      content: entry.content.substring(0, 50) + '...'
+    });
 
-    // Soft delete
-    entry.isDeleted = true;
-    entry.deletedAt = new Date();
-    await entry.save();
+    // Try direct database update instead of save()
+    const updateResult = await JournalEntry.findByIdAndUpdate(
+      entry._id,
+      {
+        isDeleted: true,
+        deletedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    console.log('🗑️ DELETE ROUTE - Direct update result:', {
+      _id: updateResult._id,
+      isDeleted: updateResult.isDeleted,
+      deletedAt: updateResult.deletedAt
+    });
 
     // Update user stats
     const user = await User.findById(req.user.id);
+    console.log('🗑️ DELETE ROUTE - User found:', !!user);
+    console.log('🗑️ DELETE ROUTE - Current journal count:', user.stats.journalEntriesCount);
+    
     await user.updateStats({
       journalEntriesCount: Math.max(0, user.stats.journalEntriesCount - 1)
     });
+    
+    console.log('🗑️ DELETE ROUTE - User stats updated');
 
     res.json({
       success: true,
@@ -408,7 +433,8 @@ router.delete('/entries/:id', auth, checkOwnership(JournalEntry), async (req, re
     });
 
   } catch (error) {
-    console.error('Delete journal entry error:', error);
+    console.error('❌ DELETE ROUTE - Error:', error);
+    console.error('❌ DELETE ROUTE - Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Server error while deleting journal entry'

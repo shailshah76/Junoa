@@ -173,7 +173,11 @@ const authorize = (...roles) => {
 const checkOwnership = (resourceModel, resourceParam = 'id') => {
   return async (req, res, next) => {
     try {
+      console.log('🔍 OWNERSHIP CHECK - Resource param:', resourceParam);
+      console.log('🔍 OWNERSHIP CHECK - Request params:', req.params);
+      
       if (!req.user) {
+        console.log('❌ OWNERSHIP CHECK - No user found');
         return res.status(401).json({
           success: false,
           message: 'Access denied. Authentication required.'
@@ -181,29 +185,40 @@ const checkOwnership = (resourceModel, resourceParam = 'id') => {
       }
 
       const resourceId = req.params[resourceParam];
+      console.log('🔍 OWNERSHIP CHECK - Looking for resource ID:', resourceId);
+      
       const resource = await resourceModel.findById(resourceId);
+      console.log('🔍 OWNERSHIP CHECK - Resource found:', !!resource);
 
       if (!resource) {
+        console.log('❌ OWNERSHIP CHECK - Resource not found');
         return res.status(404).json({
           success: false,
           message: 'Resource not found.'
         });
       }
 
+      console.log('🔍 OWNERSHIP CHECK - Resource user ID:', resource.user);
+      console.log('🔍 OWNERSHIP CHECK - Request user ID:', req.user.id);
+      console.log('🔍 OWNERSHIP CHECK - User IDs match:', resource.user.equals(req.user.id));
+
       // Check if user owns the resource
       if (!resource.user.equals(req.user.id)) {
+        console.log('❌ OWNERSHIP CHECK - Access denied - user does not own resource');
         return res.status(403).json({
           success: false,
           message: 'Access denied. You can only access your own resources.'
         });
       }
 
+      console.log('✅ OWNERSHIP CHECK - Access granted');
       // Add resource to request for further use
       req.resource = resource;
       next();
 
     } catch (error) {
-      console.error('Ownership check error:', error);
+      console.error('❌ OWNERSHIP CHECK - Error:', error);
+      console.error('❌ OWNERSHIP CHECK - Error stack:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Server error during ownership verification.'

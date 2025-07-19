@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Sun, Moon, User, Users, BookOpen, Home, Heart, MapPin, Clock, Star } from 'lucide-react';
+import { Sun, Moon, User, Users, BookOpen, Home, Heart, MapPin, Clock, Star, Edit, Trash2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { journalAPI, communityAPI, therapistsAPI, healthCheck } from './services/api';
 import SimpleInput from './components/SimpleInput';
@@ -20,15 +20,47 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
           console.log('📝 Journal textarea input:', e.target.value);
           setJournalEntry(e.target.value);
         }}
-        placeholder="What's on your mind today?"
+        placeholder="What's on your mind today? (Minimum 10 characters)"
         className={`w-full h-32 p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
       />
-      <button
-        onClick={handleJournalSubmit}
-        className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-500 transition-colors"
-      >
-        Write your feelings
-      </button>
+      <p className="text-xs text-gray-500 mt-1">
+        Journal entries must be at least 10 characters long
+      </p>
+      <div className="flex space-x-4 mt-4">
+        <button
+          onClick={handleJournalSubmit}
+          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-500 transition-colors"
+        >
+          Write your feelings
+        </button>
+        <button
+          onClick={async () => {
+            console.log('🧪 Testing API connection...');
+            try {
+              const response = await fetch('http://localhost:7451/health');
+              const data = await response.json();
+              console.log('🧪 Health check result:', data);
+              alert(`Health check: ${JSON.stringify(data)}`);
+            } catch (error) {
+              console.error('🧪 Health check failed:', error);
+              alert(`Health check failed: ${error.message}`);
+            }
+          }}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-500 transition-colors"
+        >
+          Test API Connection
+        </button>
+        <button
+          onClick={() => {
+            const token = localStorage.getItem('token');
+            console.log('🧪 Current token:', token);
+            alert(`Current token: ${token ? token.substring(0, 50) + '...' : 'No token'}`);
+          }}
+          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-500 transition-colors"
+        >
+          Show Token
+        </button>
+      </div>
     </div>
 
     <div className="mb-8">
@@ -41,7 +73,7 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
       <div className="grid md:grid-cols-3 gap-6">
         {journalEntries.slice(0, 3).map((entry) => (
           <div
-            key={entry.id}
+            key={entry._id}
             onClick={() => setSelectedEntry(entry)}
             className={`rounded-lg border p-4 cursor-pointer hover:shadow-lg transition-shadow ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}
           >
@@ -57,28 +89,106 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
   </div>
 );
 
-const JournalPage = ({ journalEntries, setSelectedEntry, isDarkMode, themeStyles }) => (
+const JournalPage = ({ journalEntries, setSelectedEntry, isDarkMode, themeStyles, editingEntry, setEditingEntry, handleEditEntry, handleDeleteEntry, loading }) => (
   <div className="max-w-4xl mx-auto p-6">
     <h2 className="text-3xl font-bold mb-6">Your Journal</h2>
     
     <div className="grid gap-6">
       {journalEntries.map((entry) => (
         <div
-          key={entry.id}
-          onClick={() => setSelectedEntry(entry)}
-          className={`rounded-lg border p-6 cursor-pointer hover:shadow-lg transition-shadow ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}
+          key={entry._id}
+          className={`rounded-lg border p-6 hover:shadow-lg transition-shadow ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}
         >
-          <div className="flex justify-between items-start mb-3">
-            <h3 className="text-lg font-semibold">{entry.date}</h3>
-            <span className={`px-2 py-1 rounded-full text-xs ${
-              entry.mood === 'calm' ? 'bg-blue-100 text-blue-800' :
-              entry.mood === 'reflective' ? 'bg-purple-100 text-purple-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {entry.mood}
-            </span>
-          </div>
-          <p className="opacity-80">{entry.preview}</p>
+          {editingEntry?._id === entry._id ? (
+            // Edit mode
+            <div>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-lg font-semibold">{entry.date}</h3>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setEditingEntry(null)}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <textarea
+                data-entry-id={entry._id}
+                defaultValue={entry.content}
+                className={`w-full h-32 p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+                placeholder="Edit your journal entry..."
+              />
+              <div className="flex justify-end space-x-2 mt-3">
+                <button
+                  onClick={() => setEditingEntry(null)}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const textarea = document.querySelector(`textarea[data-entry-id="${entry._id}"]`);
+                    if (textarea && textarea.value.trim()) {
+                      handleEditEntry(entry._id, textarea.value.trim());
+                    }
+                  }}
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-500 transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            // View mode
+            <div>
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{entry.date}</h3>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    entry.mood === 'calm' ? 'bg-blue-100 text-blue-800' :
+                    entry.mood === 'reflective' ? 'bg-purple-100 text-purple-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {entry.mood}
+                  </span>
+                </div>
+                <div className="flex space-x-2 ml-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingEntry(entry);
+                    }}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Edit entry"
+                    disabled={loading}
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteEntry(entry._id);
+                    }}
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete entry"
+                    disabled={loading}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+              <div 
+                onClick={() => setSelectedEntry(entry)}
+                className="cursor-pointer"
+              >
+                <p className="opacity-80">{entry.preview}</p>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -434,6 +544,7 @@ const JunoaApp = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [journalEntry, setJournalEntry] = useState('');
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
   const [loading, setLoading] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking');
   
@@ -571,6 +682,7 @@ const JunoaApp = () => {
         if (isAuthenticated) {
           // Load journal entries
           const journalData = await journalAPI.getEntries();
+          console.log('📋 Loaded journal entries:', journalData.data?.entries);
           setJournalEntries(journalData.data?.entries || []);
           
           // Load community posts
@@ -597,16 +709,36 @@ const JunoaApp = () => {
   const handleJournalSubmit = async () => {
     if (!journalEntry.trim()) return;
     
+    // Check content length (backend requires 10-5000 characters)
+    if (journalEntry.trim().length < 10) {
+      alert('Journal entry must be at least 10 characters long');
+      return;
+    }
+    
+    if (journalEntry.trim().length > 5000) {
+      alert('Journal entry cannot exceed 5000 characters');
+      return;
+    }
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      alert('Please log in to create journal entries');
+      return;
+    }
+    
     setLoading(true);
     try {
-      console.log('Submitting journal entry:', journalEntry);
+      console.log('🔍 Auth check - isAuthenticated:', isAuthenticated, 'user:', user);
+      console.log('🔍 Token check - token exists:', !!localStorage.getItem('token'));
+      console.log('📝 Submitting journal entry:', journalEntry);
+      
       const result = await journalAPI.createEntry({
         content: journalEntry,
         mood: 'reflective',
         tags: ['personal']
       });
       
-      console.log('Journal submission result:', result);
+      console.log('✅ Journal submission result:', result);
       
       if (result.success) {
         setJournalEntries([result.data.entry, ...journalEntries]);
@@ -616,9 +748,83 @@ const JunoaApp = () => {
         alert('Failed to save journal entry');
       }
     } catch (error) {
-      console.error('Journal submission error:', error);
-      console.error('Error response:', error.response?.data);
+      console.error('❌ Journal submission error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
       alert(`Failed to save journal entry: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditEntry = async (entryId, updatedContent) => {
+    setLoading(true);
+    try {
+      console.log('Editing journal entry:', entryId, updatedContent);
+      const result = await journalAPI.updateEntry(entryId, {
+        content: updatedContent,
+        mood: 'reflective',
+        tags: ['personal']
+      });
+      
+      console.log('Journal edit result:', result);
+      
+      if (result.success) {
+        setJournalEntries(journalEntries.map(entry => 
+          entry._id === entryId ? result.data.entry : entry
+        ));
+        setEditingEntry(null);
+        alert('Journal entry updated successfully!');
+      } else {
+        alert('Failed to update journal entry');
+      }
+    } catch (error) {
+      console.error('Journal edit error:', error);
+      alert(`Failed to update journal entry: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEntry = async (entryId) => {
+    console.log('🚨 DELETE FUNCTION CALLED with entryId:', entryId);
+    console.log('🚨 DELETE FUNCTION - entryId type:', typeof entryId);
+    console.log('🚨 DELETE FUNCTION - entryId length:', entryId?.length);
+    
+    if (!confirm('Are you sure you want to delete this journal entry? This action cannot be undone.')) {
+      console.log('🚨 DELETE CANCELLED by user');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      console.log('🗑️ Deleting journal entry:', entryId);
+      console.log('🔍 Current journal entries before delete:', journalEntries.length);
+      console.log('🔍 Entry structure sample:', journalEntries[0]);
+      console.log('🔍 Token from localStorage:', localStorage.getItem('token'));
+      console.log('🔍 Token exists:', !!localStorage.getItem('token'));
+      
+      const result = await journalAPI.deleteEntry(entryId);
+      
+      console.log('✅ Journal delete result:', result);
+      
+      if (result.success) {
+        const updatedEntries = journalEntries.filter(entry => entry._id !== entryId);
+        console.log('🔄 Updated entries after delete:', updatedEntries.length);
+        setJournalEntries(updatedEntries);
+        
+        if (selectedEntry?._id === entryId) {
+          setSelectedEntry(null);
+        }
+        alert('Journal entry deleted successfully!');
+      } else {
+        alert('Failed to delete journal entry');
+      }
+    } catch (error) {
+      console.error('❌ Journal delete error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      alert(`Failed to delete journal entry: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -721,6 +927,11 @@ const JunoaApp = () => {
           setSelectedEntry={setSelectedEntry}
           isDarkMode={isDarkMode}
           themeStyles={themeStyles}
+          editingEntry={editingEntry}
+          setEditingEntry={setEditingEntry}
+          handleEditEntry={handleEditEntry}
+          handleDeleteEntry={handleDeleteEntry}
+          loading={loading}
         />;
       case 'community':
         return <CommunityPage 
