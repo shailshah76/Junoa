@@ -11,6 +11,7 @@ const journalRoutes = require('./routes/journal');
 const communityRoutes = require('./routes/community');
 const therapistRoutes = require('./routes/therapists');
 const profileRoutes = require('./routes/profile');
+const testRoutes = require('./routes/test');
 
 // Import middleware
 const { auth } = require('./middleware/auth');
@@ -164,6 +165,7 @@ app.use('/api/journal', journalRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/therapists', therapistRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/test', testRoutes);
 
 // Serve static files (uploads) with authentication for private files
 app.use('/uploads', express.static('uploads', {

@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const JournalEntry = require('../models/JournalEntry');
 const User = require('../models/User');
 const { auth, checkOwnership } = require('../middleware/auth');
+const llmService = require('../services/llmService');
 
 const router = express.Router();
 
@@ -18,40 +19,43 @@ const createEntryLimiter = rateLimit({
   }
 });
 
-// AI Response simulation (replace with actual AI service)
+// LLM-powered AI Response generation
 const generateAIResponse = async (content, mood, user) => {
-  // Simulated AI response - replace with actual AI integration
-  const responses = {
-    calm: "It's wonderful that you're experiencing calm. These peaceful moments are important for your mental well-being. Consider what contributed to this feeling so you can recreate it when needed.",
-    reflective: "Thank you for taking time to reflect. Self-awareness is a powerful tool for personal growth. Your insights show you're developing a deeper understanding of yourself.",
-    peaceful: "Finding peace is a beautiful gift you can give yourself. These moments of tranquility can serve as anchors during more challenging times.",
-    anxious: "I hear that you're feeling anxious. Remember that anxiety is temporary and you have the strength to work through it. Consider some deep breathing or grounding techniques.",
-    sad: "It's okay to feel sad - all emotions are valid. Thank you for sharing these feelings. Remember that sadness, like all emotions, will pass.",
-    happy: "I'm so glad to hear you're feeling happy! These positive moments are important to celebrate and remember.",
-    grateful: "Gratitude is such a powerful practice. Recognizing what you're thankful for can shift your perspective and improve your overall well-being.",
-    default: "Thank you for sharing your thoughts. It takes courage to express your feelings, and I'm here to support you on your journey."
-  };
-
-  const suggestions = [
-    "Consider practicing mindfulness meditation",
-    "Try journaling about this experience tomorrow",
-    "Remember to be kind to yourself",
-    "Consider talking to a trusted friend about this"
-  ];
-
-  // Simple sentiment analysis (replace with actual AI)
-  const sentiment = content.toLowerCase().includes('happy') || content.toLowerCase().includes('good') || content.toLowerCase().includes('wonderful') 
-    ? 'positive' 
-    : content.toLowerCase().includes('sad') || content.toLowerCase().includes('bad') || content.toLowerCase().includes('terrible')
-    ? 'negative'
-    : 'neutral';
-
-  return {
-    content: responses[mood] || responses.default,
-    sentiment: sentiment,
-    suggestions: suggestions.slice(0, 2),
-    confidence: 0.8
-  };
+  try {
+    console.log('🤖 Generating AI response for journal entry...');
+    
+    // Use LLM service to analyze the journal entry
+    const analysis = await llmService.analyzeJournalEntry(content);
+    
+    // Create AI response object
+    const aiResponse = {
+      content: analysis.aiComment,
+      sentiment: analysis.mood === 'sad' || analysis.mood === 'anxious' || analysis.mood === 'stressed' ? 'negative' :
+                 analysis.mood === 'happy' || analysis.mood === 'excited' || analysis.mood === 'grateful' ? 'positive' : 'neutral',
+      suggestions: [
+        "Consider practicing mindfulness meditation",
+        "Try journaling about this experience tomorrow",
+        "Remember to be kind to yourself",
+        "Consider talking to a trusted friend about this"
+      ].slice(0, 2),
+      confidence: 0.9,
+      generatedAt: new Date()
+    };
+    
+    console.log('✅ AI response generated successfully');
+    return aiResponse;
+  } catch (error) {
+    console.error('❌ Error generating AI response:', error);
+    
+    // Fallback response if LLM fails
+    return {
+      content: "Thank you for sharing your thoughts. I appreciate your openness and courage in expressing yourself.",
+      sentiment: 'neutral',
+      suggestions: ["Remember to be kind to yourself", "Consider talking to a trusted friend about this"],
+      confidence: 0.5,
+      generatedAt: new Date()
+    };
+  }
 };
 
 // Validation rules
@@ -141,11 +145,28 @@ router.post('/entries', auth, createEntryLimiter, createEntryValidation, async (
 
     await journalEntry.save();
 
-    // Generate AI response
+    // Generate AI response and mood analysis
     try {
       const user = await User.findById(req.user.id);
-      const aiResponse = await generateAIResponse(content, mood || 'reflective', user);
+      
+      // Use LLM to analyze the journal entry and get mood + AI comment
+      const analysis = await llmService.analyzeJournalEntry(content);
+      
+      // Update the journal entry with LLM-determined mood and AI comment
+      journalEntry.mood = analysis.mood;
+      journalEntry.aiComment = analysis.aiComment;
+      
+      // Generate additional AI response for suggestions
+      const aiResponse = await generateAIResponse(content, analysis.mood, user);
       await journalEntry.addAIResponse(aiResponse);
+      
+      // Save the updated entry
+      await journalEntry.save();
+      
+      console.log('✅ Journal entry updated with LLM analysis:', {
+        mood: analysis.mood,
+        aiCommentLength: analysis.aiComment.length
+      });
     } catch (aiError) {
       console.error('AI response generation failed:', aiError);
       // Continue without AI response if it fails
