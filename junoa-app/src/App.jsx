@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Sun, Moon, User, Users, BookOpen, Home, Heart, MapPin, Clock, Star, Edit, Trash2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { journalAPI, communityAPI, therapistsAPI, healthCheck } from './services/api';
+import { journalAPI, communityAPI, therapistsAPI, authAPI, healthCheck } from './services/api';
 import SimpleInput from './components/SimpleInput';
 
 // Move page components outside to prevent recreation on every render
@@ -26,41 +26,12 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
       <p className="text-xs text-gray-500 mt-1">
         Journal entries must be at least 10 characters long
       </p>
-      <div className="flex space-x-4 mt-4">
-        <button
-          onClick={handleJournalSubmit}
-          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-500 transition-colors"
-        >
-          Write your feelings
-        </button>
-        <button
-          onClick={async () => {
-            console.log('🧪 Testing API connection...');
-            try {
-              const response = await fetch('http://localhost:7451/health');
-              const data = await response.json();
-              console.log('🧪 Health check result:', data);
-              alert(`Health check: ${JSON.stringify(data)}`);
-            } catch (error) {
-              console.error('🧪 Health check failed:', error);
-              alert(`Health check failed: ${error.message}`);
-            }
-          }}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-500 transition-colors"
-        >
-          Test API Connection
-        </button>
-        <button
-          onClick={() => {
-            const token = localStorage.getItem('token');
-            console.log('🧪 Current token:', token);
-            alert(`Current token: ${token ? token.substring(0, 50) + '...' : 'No token'}`);
-          }}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-500 transition-colors"
-        >
-          Show Token
-        </button>
-      </div>
+      <button
+        onClick={handleJournalSubmit}
+        className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-500 transition-colors"
+      >
+        Write your feelings
+      </button>
     </div>
 
     <div className="mb-8">
@@ -431,7 +402,22 @@ const LoginPage = ({
   </div>
 );
 
-const ProfilePage = ({ journalEntries, isDarkMode, themeStyles }) => (
+const ProfilePage = ({ 
+  user, 
+  profileData, 
+  isEditing, 
+  setIsEditing, 
+  handleProfileUpdate, 
+  handlePreferencesUpdate,
+  refreshProfileData,
+  loading, 
+  isDarkMode, 
+  themeStyles 
+}) => {
+  console.log('🔍 ProfilePage render - profileData:', profileData);
+  console.log('🔍 ProfilePage render - journal count:', profileData?.user?.stats?.journalEntriesCount);
+  
+  return (
   <div className="max-w-4xl mx-auto p-6">
     <div className="text-center mb-8">
       <h2 className="text-3xl font-bold mb-2">Your Profile</h2>
@@ -440,71 +426,130 @@ const ProfilePage = ({ journalEntries, isDarkMode, themeStyles }) => (
 
     <div className="grid md:grid-cols-2 gap-6">
       <div className={`rounded-lg border p-6 ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}>
-        <h3 className="text-xl font-semibold mb-4">Account Information</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Name</label>
-            <input
-              type="text"
-              defaultValue="John Doe"
-              className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <input
-              type="email"
-              defaultValue="john@example.com"
-              className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
-            />
-          </div>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition-colors">
-            Update Profile
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Account Information</h3>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="text-sm text-green-600 hover:text-green-500 transition-colors"
+          >
+            {isEditing ? 'Cancel' : 'Edit'}
           </button>
         </div>
+        
+        {isEditing ? (
+          <form onSubmit={handleProfileUpdate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Name</label>
+              <input
+                type="text"
+                name="name"
+                defaultValue={user?.name || ''}
+                className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                defaultValue={user?.email || ''}
+                className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+                required
+              />
+            </div>
+            <button 
+              type="submit"
+              disabled={loading}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Updating...' : 'Update Profile'}
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Name</label>
+              <p className="p-3 bg-gray-50 rounded-lg">{user?.name || 'Not set'}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <p className="p-3 bg-gray-50 rounded-lg">{user?.email || 'Not set'}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={`rounded-lg border p-6 ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}>
         <h3 className="text-xl font-semibold mb-4">Preferences</h3>
-        <div className="space-y-4">
+        <form onSubmit={handlePreferencesUpdate} className="space-y-4">
           <div className="flex items-center justify-between">
             <span>Email notifications</span>
-            <input type="checkbox" className="form-checkbox" defaultChecked />
+            <input 
+              type="checkbox" 
+              name="emailNotifications"
+              defaultChecked={profileData?.user?.preferences?.emailNotifications ?? true}
+              className="form-checkbox h-4 w-4 text-green-600"
+            />
           </div>
           <div className="flex items-center justify-between">
             <span>Daily journal reminders</span>
-            <input type="checkbox" className="form-checkbox" defaultChecked />
+            <input 
+              type="checkbox" 
+              name="dailyReminders"
+              defaultChecked={profileData?.user?.preferences?.dailyReminders ?? true}
+              className="form-checkbox h-4 w-4 text-green-600"
+            />
           </div>
           <div className="flex items-center justify-between">
             <span>Community updates</span>
-            <input type="checkbox" className="form-checkbox" />
+            <input 
+              type="checkbox" 
+              name="communityUpdates"
+              defaultChecked={profileData?.user?.preferences?.communityUpdates ?? false}
+              className="form-checkbox h-4 w-4 text-green-600"
+            />
           </div>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition-colors">
-            Save Preferences
+          <button 
+            type="submit"
+            disabled={loading}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : 'Save Preferences'}
           </button>
-        </div>
+        </form>
       </div>
     </div>
 
     <div className={`rounded-lg border p-6 mt-6 ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}>
-      <h3 className="text-xl font-semibold mb-4">Your Journey</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold">Your Journey</h3>
+        <button
+          onClick={refreshProfileData}
+          disabled={loading}
+          className="text-sm text-green-600 hover:text-green-500 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Refreshing...' : 'Refresh Stats'}
+        </button>
+      </div>
       <div className="grid md:grid-cols-3 gap-4">
         <div className="text-center">
-          <div className="text-3xl font-bold text-green-500">{journalEntries.length}</div>
+          <div className="text-3xl font-bold text-green-500">{profileData?.user?.stats?.journalEntriesCount || 0}</div>
           <div className="text-sm opacity-80">Journal Entries</div>
         </div>
         <div className="text-center">
-          <div className="text-3xl font-bold text-green-500">42</div>
+          <div className="text-3xl font-bold text-green-500">{profileData?.user?.stats?.daysActive || 0}</div>
           <div className="text-sm opacity-80">Days Active</div>
         </div>
         <div className="text-center">
-          <div className="text-3xl font-bold text-green-500">12</div>
+          <div className="text-3xl font-bold text-green-500">{profileData?.user?.stats?.insightsGained || 0}</div>
           <div className="text-sm opacity-80">Insights Gained</div>
         </div>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const EntryModal = ({ entry, onClose, isDarkMode, themeStyles }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -561,6 +606,10 @@ const JunoaApp = () => {
   const [journalEntries, setJournalEntries] = useState([]);
   const [communityEntries, setCommunityEntries] = useState([]);
   const [therapists, setTherapists] = useState([]);
+  
+  // Profile state
+  const [profileData, setProfileData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Memoize theme-dependent styles to prevent re-renders
   const themeStyles = useMemo(() => ({
@@ -692,6 +741,18 @@ const JunoaApp = () => {
           // Load therapists
           const therapistsData = await therapistsAPI.getTherapists();
           setTherapists(therapistsData.data?.therapists || []);
+          
+          // Load profile data
+          try {
+            const profileResult = await authAPI.getProfile();
+            console.log('🔍 Profile API response:', profileResult);
+            if (profileResult.success) {
+              console.log('✅ Setting profile data:', profileResult.data);
+              setProfileData(profileResult.data);
+            }
+          } catch (error) {
+            console.error('Failed to load profile data:', error);
+          }
         }
       } catch (error) {
         console.error('❌ Failed to load data:', error);
@@ -701,6 +762,14 @@ const JunoaApp = () => {
 
     loadData();
   }, [isAuthenticated]);
+
+  // Refresh profile data when navigating to profile page
+  useEffect(() => {
+    if (currentPage === 'profile' && isAuthenticated) {
+      console.log('🔄 Navigating to profile page - refreshing data...');
+      refreshProfileData();
+    }
+  }, [currentPage, isAuthenticated]);
 
   const toggleDarkMode = useCallback(() => {
     setIsDarkMode(prev => !prev);
@@ -741,8 +810,15 @@ const JunoaApp = () => {
       console.log('✅ Journal submission result:', result);
       
       if (result.success) {
+        console.log('✅ Journal entry created successfully');
         setJournalEntries([result.data.entry, ...journalEntries]);
         setJournalEntry('');
+        
+        console.log('🔄 About to refresh profile data...');
+        // Refresh profile data from database for accurate count
+        await refreshProfileData();
+        console.log('✅ Profile data refresh completed');
+        
         alert('Your journal entry has been saved!');
       } else {
         alert('Failed to save journal entry');
@@ -774,6 +850,10 @@ const JunoaApp = () => {
           entry._id === entryId ? result.data.entry : entry
         ));
         setEditingEntry(null);
+        
+        // Refresh profile data from database for accurate count
+        await refreshProfileData();
+        
         alert('Journal entry updated successfully!');
       } else {
         alert('Failed to update journal entry');
@@ -813,6 +893,9 @@ const JunoaApp = () => {
         console.log('🔄 Updated entries after delete:', updatedEntries.length);
         setJournalEntries(updatedEntries);
         
+        // Refresh profile data from database for accurate count
+        await refreshProfileData();
+        
         if (selectedEntry?._id === entryId) {
           setSelectedEntry(null);
         }
@@ -827,6 +910,100 @@ const JunoaApp = () => {
       alert(`Failed to delete journal entry: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Profile handlers
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const formData = new FormData(e.target);
+      const profileData = {
+        name: formData.get('name'),
+        email: formData.get('email')
+      };
+      
+      console.log('📝 Updating profile:', profileData);
+      const result = await authAPI.updateProfile(profileData);
+      
+      if (result.success) {
+        // Update local user state
+        const updatedUser = { ...user, ...result.data.user };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      } else {
+        alert(result.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      alert(`Failed to update profile: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreferencesUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const formData = new FormData(e.target);
+      const preferences = {
+        emailNotifications: formData.get('emailNotifications') === 'on',
+        dailyReminders: formData.get('dailyReminders') === 'on',
+        communityUpdates: formData.get('communityUpdates') === 'on'
+      };
+      
+      console.log('📝 Updating preferences:', preferences);
+      const result = await authAPI.updateProfile({ preferences });
+      
+      if (result.success) {
+        // Update local profile data
+        setProfileData(prev => ({
+          ...prev,
+          user: {
+            ...prev?.user,
+            preferences: { ...prev?.user?.preferences, ...preferences }
+          }
+        }));
+        alert('Preferences updated successfully!');
+      } else {
+        alert(result.message || 'Failed to update preferences');
+      }
+    } catch (error) {
+      console.error('Preferences update error:', error);
+      alert(`Failed to update preferences: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to refresh profile data from server
+  const refreshProfileData = async () => {
+    if (!isAuthenticated) {
+      console.log('⚠️ Skipping profile refresh - user not authenticated');
+      return;
+    }
+    
+    try {
+      console.log('🔄 Refreshing profile data from database...');
+      const profileResult = await authAPI.getProfile();
+      console.log('🔍 Refresh API response:', profileResult);
+      if (profileResult.success) {
+        console.log('✅ Profile data refreshed:', profileResult.data);
+        console.log('🔍 Journal entries count:', profileResult.data?.user?.stats?.journalEntriesCount);
+        console.log('🔍 Full profile data structure:', JSON.stringify(profileResult.data, null, 2));
+        setProfileData(profileResult.data);
+        console.log('✅ Profile data state updated');
+      } else {
+        console.error('❌ Failed to refresh profile data:', profileResult.message);
+      }
+    } catch (error) {
+      console.error('❌ Failed to refresh profile data:', error);
     }
   };
 
@@ -982,7 +1159,14 @@ const JunoaApp = () => {
       case 'profile':
         return <ProfilePage 
           key="profile" 
-          journalEntries={journalEntries}
+          user={user}
+          profileData={profileData}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          handleProfileUpdate={handleProfileUpdate}
+          handlePreferencesUpdate={handlePreferencesUpdate}
+          refreshProfileData={refreshProfileData}
+          loading={loading}
           isDarkMode={isDarkMode}
           themeStyles={themeStyles}
         />;

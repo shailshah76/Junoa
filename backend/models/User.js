@@ -167,6 +167,33 @@ userSchema.methods.updateStats = async function(updates) {
   await this.save();
 };
 
+// Instance method to recalculate stats from database
+userSchema.methods.recalculateStats = async function() {
+  const JournalEntry = mongoose.model('JournalEntry');
+  
+  // Count actual journal entries (not deleted)
+  const journalEntriesCount = await JournalEntry.countDocuments({
+    user: this._id,
+    isDeleted: { $ne: true }
+  });
+  
+  // Update stats with accurate count
+  this.stats.journalEntriesCount = journalEntriesCount;
+  
+  // Update days active if it's a new day
+  const today = new Date();
+  const lastActive = new Date(this.stats.lastActiveDate);
+  
+  if (today.toDateString() !== lastActive.toDateString()) {
+    this.stats.daysActive += 1;
+    this.stats.lastActiveDate = today;
+  }
+  
+  await this.save();
+  
+  return this.stats;
+};
+
 // Static method to find by email
 userSchema.statics.findByEmail = function(email) {
   return this.findOne({ email: email.toLowerCase() });

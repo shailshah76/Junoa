@@ -153,8 +153,8 @@ router.post('/entries', auth, createEntryLimiter, createEntryValidation, async (
 
     // Update user stats
     const user = await User.findById(req.user.id);
+    await user.recalculateStats();
     await user.updateStats({
-      journalEntriesCount: user.stats.journalEntriesCount + 1,
       insightsGained: user.stats.insightsGained + 1
     });
 
@@ -421,11 +421,9 @@ router.delete('/entries/:id', auth, checkOwnership(JournalEntry), async (req, re
     console.log('🗑️ DELETE ROUTE - User found:', !!user);
     console.log('🗑️ DELETE ROUTE - Current journal count:', user.stats.journalEntriesCount);
     
-    await user.updateStats({
-      journalEntriesCount: Math.max(0, user.stats.journalEntriesCount - 1)
-    });
+    await user.recalculateStats();
     
-    console.log('🗑️ DELETE ROUTE - User stats updated');
+    console.log('🗑️ DELETE ROUTE - User stats recalculated');
 
     res.json({
       success: true,
