@@ -1,13 +1,31 @@
 @import "tailwindcss";
 
-/* Custom dark green theme */
+/* Theme color variables */
 :root {
+  /* Green theme (current) */
   --dark-green: #0a0f0a;
   --dark-green-light: #111611;
   --dark-green-lighter: #0f1a0f;
+  --green-primary: #10b981;
+  --green-hover: #059669;
+  
+  /* Cobalt blue theme */
+  --dark-cobalt: #0a0f1a;
+  --dark-cobalt-light: #111622;
+  --dark-cobalt-lighter: #0f1a2a;
+  --cobalt-primary: #6395EE;
+  --cobalt-hover: #5a87e6;
+  
+  /* Warm yellow theme */
+  --dark-yellow: #1a0f0a;
+  --dark-yellow-light: #221611;
+  --dark-yellow-lighter: #2a1a0f;
+  --yellow-primary: #D5C58A;
+  --yellow-hover: #c4b37a;
 }
 
 /* Custom utility classes */
+/* Green theme */
 .bg-dark-green {
   background-color: var(--dark-green);
 }
@@ -18,6 +36,32 @@
 
 .bg-dark-green-lighter {
   background-color: var(--dark-green-lighter);
+}
+
+/* Cobalt theme */
+.bg-dark-cobalt {
+  background-color: var(--dark-cobalt);
+}
+
+.bg-dark-cobalt-light {
+  background-color: var(--dark-cobalt-light);
+}
+
+.bg-dark-cobalt-lighter {
+  background-color: var(--dark-cobalt-lighter);
+}
+
+/* Yellow theme */
+.bg-dark-yellow {
+  background-color: var(--dark-yellow);
+}
+
+.bg-dark-yellow-light {
+  background-color: var(--dark-yellow-light);
+}
+
+.bg-dark-yellow-lighter {
+  background-color: var(--dark-yellow-lighter);
 }
 
 /* Ensure textarea theme styles are applied */
@@ -151,4 +195,58 @@ input[data-theme="dark"]:-webkit-autofill:focus,
 input[data-theme="dark"]:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #0a0f0a inset !important;
   -webkit-text-fill-color: white !important;
+}
+
+/* Custom yellow theme overrides */
+.theme-yellow .text-yellow-500,
+.theme-yellow .text-yellow-400 {
+  color: #D5C58A !important;
+}
+
+.theme-yellow .bg-yellow-600,
+.theme-yellow .bg-yellow-500 {
+  background-color: #D5C58A !important;
+}
+
+.theme-yellow .hover\:bg-yellow-500:hover {
+  background-color: #c4b37a !important;
+}
+
+.theme-yellow .border-yellow-300 {
+  border-color: #D5C58A !important;
+}
+
+.theme-yellow .border-yellow-400 {
+  border-color: #D5C58A !important;
+}
+
+.theme-yellow .hover\:bg-yellow-800:hover {
+  background-color: #b3a26a !important;
+}
+
+/* Custom cobalt theme overrides */
+.theme-cobalt .text-blue-500,
+.theme-cobalt .text-blue-400 {
+  color: #6395EE !important;
+}
+
+.theme-cobalt .bg-blue-600,
+.theme-cobalt .bg-blue-500 {
+  background-color: #6395EE !important;
+}
+
+.theme-cobalt .hover\:bg-blue-500:hover {
+  background-color: #5a87e6 !important;
+}
+
+.theme-cobalt .border-blue-300 {
+  border-color: #6395EE !important;
+}
+
+.theme-cobalt .border-blue-400 {
+  border-color: #6395EE !important;
+}
+
+.theme-cobalt .hover\:bg-blue-800:hover {
+  background-color: #5179d4 !important;
 }

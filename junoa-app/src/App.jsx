@@ -5,7 +5,33 @@ import { journalAPI, communityAPI, therapistsAPI, authAPI, healthCheck } from '.
 import SimpleInput from './components/SimpleInput';
 
 // Move page components outside to prevent recreation on every render
-const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalEntries, setSelectedEntry, isDarkMode, themeStyles }) => (
+const ThemeSelector = ({ colorTheme, setColorTheme, isDarkMode }) => (
+  <div className={`fixed bottom-6 right-6 z-50 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-4`}>
+    <h4 className="text-sm font-medium mb-3 opacity-80">Choose Theme</h4>
+    <div className="flex space-x-2">
+      <button
+        onClick={() => setColorTheme('green')}
+        className={`w-8 h-8 rounded-full transition-all ${colorTheme === 'green' ? 'ring-2 ring-offset-2 ring-green-500' : ''}`}
+        style={{ backgroundColor: '#10b981' }}
+        title="Green - Calm & Growth"
+      />
+      <button
+        onClick={() => setColorTheme('cobalt')}
+        className={`w-8 h-8 rounded-full transition-all ${colorTheme === 'cobalt' ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+        style={{ backgroundColor: '#6395EE' }}
+        title="Cobalt - Trust & Stability"
+      />
+      <button
+        onClick={() => setColorTheme('yellow')}
+        className={`w-8 h-8 rounded-full transition-all ${colorTheme === 'yellow' ? 'ring-2 ring-offset-2 ring-yellow-500' : ''}`}
+        style={{ backgroundColor: '#D5C58A' }}
+        title="Yellow - Energy & Joy"
+      />
+    </div>
+  </div>
+);
+
+const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalEntries, setSelectedEntry, isDarkMode, themeStyles, colorTheme, setColorTheme }) => (
   <div className="max-w-4xl mx-auto p-6">
     <div className="text-center mb-12">
       <h2 className="text-4xl font-bold mb-4">Welcome to Junoa</h2>
@@ -29,7 +55,7 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
       </p>
       <button
         onClick={handleJournalSubmit}
-        className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-500 transition-colors"
+        className={`mt-4 ${colorTheme === 'green' ? 'bg-green-600 hover:bg-green-500' : colorTheme === 'cobalt' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-600 hover:bg-yellow-500'} text-white px-6 py-2 rounded-lg transition-colors`}
       >
         Write your feelings
       </button>
@@ -47,7 +73,7 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
           <div
             key={entry._id}
             onClick={() => setSelectedEntry(entry)}
-            className={`rounded-lg border p-4 cursor-pointer hover:shadow-lg transition-shadow ${isDarkMode ? 'bg-dark-green-light border-gray-700' : 'bg-white border-green-200'}`}
+            className={`rounded-lg border p-4 cursor-pointer hover:shadow-lg transition-shadow ${isDarkMode ? `${themeStyles.darkLight} border-gray-700` : 'bg-white border-gray-200'}`}
           >
             <div className="h-48 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg mb-4 flex items-center justify-center">
               <div className="w-20 h-20 bg-amber-300 rounded-full opacity-60"></div>
@@ -58,6 +84,12 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
         ))}
       </div>
     </div>
+    
+    <ThemeSelector 
+      colorTheme={colorTheme} 
+      setColorTheme={setColorTheme} 
+      isDarkMode={isDarkMode} 
+    />
   </div>
 );
 
@@ -661,6 +693,7 @@ const JunoaApp = () => {
   
   const [currentPage, setCurrentPage] = useState('home');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [colorTheme, setColorTheme] = useState('green'); // 'green', 'cobalt', 'yellow'
   const [journalEntry, setJournalEntry] = useState('');
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -687,17 +720,63 @@ const JunoaApp = () => {
 
   // Memoize theme-dependent styles to prevent re-renders
   const themeStyles = useMemo(() => {
+    const getThemeColors = () => {
+      switch (colorTheme) {
+        case 'cobalt':
+          return {
+            dark: 'bg-dark-cobalt',
+            darkLight: 'bg-dark-cobalt-light',
+            darkLighter: 'bg-dark-cobalt-lighter',
+            primary: 'text-blue-500',
+            primaryBg: 'bg-blue-600',
+            primaryHover: 'hover:bg-blue-500',
+            border: isDarkMode ? 'border-gray-600' : 'border-blue-300',
+            customColor: '#6395EE',
+            customHover: '#5a87e6'
+          };
+        case 'yellow':
+          return {
+            dark: 'bg-dark-yellow',
+            darkLight: 'bg-dark-yellow-light',
+            darkLighter: 'bg-dark-yellow-lighter',
+            primary: 'text-yellow-500',
+            primaryBg: 'bg-yellow-600',
+            primaryHover: 'hover:bg-yellow-500',
+            border: isDarkMode ? 'border-gray-600' : 'border-yellow-300',
+            customColor: '#D5C58A',
+            customHover: '#c4b37a'
+          };
+        default: // green
+          return {
+            dark: 'bg-dark-green',
+            darkLight: 'bg-dark-green-light',
+            darkLighter: 'bg-dark-green-lighter',
+            primary: 'text-green-500',
+            primaryBg: 'bg-green-600',
+            primaryHover: 'hover:bg-green-500',
+            border: isDarkMode ? 'border-gray-600' : 'border-green-300'
+          };
+      }
+    };
+
+    const colors = getThemeColors();
     const styles = {
       input: isDarkMode 
-        ? 'bg-dark-green border-gray-600 text-white' 
-        : 'bg-white border-green-300',
+        ? `${colors.dark} border-gray-600 text-white` 
+        : `bg-white ${colors.border}`,
       container: isDarkMode 
-        ? 'bg-dark-green-light border-gray-700' 
-        : 'bg-white border-green-200'
+        ? `${colors.darkLight} border-gray-700` 
+        : `bg-white ${colors.border.replace('border-', 'border-').replace('-300', '-200')}`,
+      primary: colors.primary,
+      primaryBg: colors.primaryBg,
+      primaryHover: colors.primaryHover,
+      dark: colors.dark,
+      darkLight: colors.darkLight,
+      darkLighter: colors.darkLighter
     };
-    console.log('🎨 Theme styles updated:', { isDarkMode, styles });
+    console.log('🎨 Theme styles updated:', { isDarkMode, colorTheme, styles });
     return styles;
-  }, [isDarkMode]);
+  }, [isDarkMode, colorTheme]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -1088,7 +1167,7 @@ const JunoaApp = () => {
   const NavigationBar = () => {
     console.log('🔍 NavigationBar render - isAuthenticated:', isAuthenticated, 'user:', user);
     return (
-    <nav className={`${isDarkMode ? 'bg-dark-green text-white' : 'bg-green-50 text-gray-900'} p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-green-200'}`}>
+    <nav className={`${isDarkMode ? `${themeStyles.dark} text-white` : 'bg-gray-50 text-gray-900'} p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <div className="text-2xl">✿</div>
@@ -1098,25 +1177,25 @@ const JunoaApp = () => {
         <div className="flex items-center space-x-6">
           <button 
             onClick={() => setCurrentPage('home')}
-            className={`hover:text-green-400 transition-colors ${currentPage === 'home' ? 'text-green-400' : ''}`}
+            className={`hover:${colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400'} transition-colors ${currentPage === 'home' ? (colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400') : ''}`}
           >
             Home
           </button>
           <button 
             onClick={() => setCurrentPage('journal')}
-            className={`hover:text-green-400 transition-colors ${currentPage === 'journal' ? 'text-green-400' : ''}`}
+            className={`hover:${colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400'} transition-colors ${currentPage === 'journal' ? (colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400') : ''}`}
           >
             Journal
           </button>
           <button 
             onClick={() => setCurrentPage('community')}
-            className={`hover:text-green-400 transition-colors ${currentPage === 'community' ? 'text-green-400' : ''}`}
+            className={`hover:${colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400'} transition-colors ${currentPage === 'community' ? (colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400') : ''}`}
           >
             Community
           </button>
           <button 
             onClick={() => setCurrentPage('resources')}
-            className={`hover:text-green-400 transition-colors ${currentPage === 'resources' ? 'text-green-400' : ''}`}
+            className={`hover:${colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400'} transition-colors ${currentPage === 'resources' ? (colorTheme === 'green' ? 'text-green-400' : colorTheme === 'cobalt' ? 'text-blue-400' : 'text-yellow-400') : ''}`}
           >
             Resources
           </button>
@@ -1136,7 +1215,7 @@ const JunoaApp = () => {
                 setCurrentPage('signup');
               }
             }}
-            className="bg-green-600 px-4 py-2 rounded-lg hover:bg-green-500 transition-colors"
+            className={`${colorTheme === 'green' ? 'bg-green-600 hover:bg-green-500' : colorTheme === 'cobalt' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-600 hover:bg-yellow-500'} px-4 py-2 rounded-lg transition-colors`}
             disabled={loading}
           >
             {isAuthenticated ? 'Log Out' : 'Sign Up'}
@@ -1150,7 +1229,7 @@ const JunoaApp = () => {
                 setCurrentPage('login');
               }
             }}
-            className="border border-green-400 px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+            className={`border ${colorTheme === 'green' ? 'border-green-400 hover:bg-green-800' : colorTheme === 'cobalt' ? 'border-blue-400 hover:bg-blue-800' : 'border-yellow-400 hover:bg-yellow-800'} px-4 py-2 rounded-lg transition-colors`}
             disabled={loading}
           >
             {isAuthenticated ? 'Profile' : 'Log In'}
@@ -1174,6 +1253,8 @@ const JunoaApp = () => {
           setSelectedEntry={setSelectedEntry}
           isDarkMode={isDarkMode}
           themeStyles={themeStyles}
+          colorTheme={colorTheme}
+          setColorTheme={setColorTheme}
         />;
       case 'journal':
         return <JournalPage 
@@ -1264,7 +1345,7 @@ const JunoaApp = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors ${isDarkMode ? 'bg-dark-green text-white' : 'bg-green-50 text-gray-900'}`}>
+    <div className={`min-h-screen transition-colors theme-${colorTheme} ${isDarkMode ? `${themeStyles.dark} text-white` : 'bg-gray-50 text-gray-900'}`}>
       <NavigationBar />
       
 
