@@ -19,3 +19,136 @@
 .bg-dark-green-lighter {
   background-color: var(--dark-green-lighter);
 }
+
+/* Ensure textarea theme styles are applied */
+textarea.bg-dark-green {
+  background-color: var(--dark-green) !important;
+  color: white !important;
+}
+
+textarea.bg-white {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Ensure input field theme styles are applied */
+input.bg-dark-green {
+  background-color: var(--dark-green) !important;
+  color: white !important;
+}
+
+input.bg-white {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* More specific input selectors for better override */
+input[type="text"].bg-dark-green,
+input[type="email"].bg-dark-green,
+input[type="password"].bg-dark-green {
+  background-color: var(--dark-green) !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+input[type="text"].bg-white,
+input[type="email"].bg-white,
+input[type="password"].bg-white {
+  background-color: white !important;
+  color: black !important;
+  border-color: #10b981 !important;
+}
+
+/* Override any browser autofill styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--dark-green) inset !important;
+  -webkit-text-fill-color: white !important;
+}
+
+/* Dark mode specific autofill override */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--dark-green) inset !important;
+  -webkit-text-fill-color: white !important;
+}
+
+/* Data theme attribute selectors */
+input[data-theme="dark"] {
+  background-color: #0a0f0a !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+input[data-theme="light"] {
+  background-color: white !important;
+  color: black !important;
+  border-color: #10b981 !important;
+}
+
+/* Profile page specific input overrides */
+input[name="name"][data-theme="dark"],
+input[name="email"][data-theme="dark"] {
+  background-color: #0a0f0a !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+input[name="name"][data-theme="light"],
+input[name="email"][data-theme="light"] {
+  background-color: white !important;
+  color: black !important;
+  border-color: #10b981 !important;
+}
+
+/* Global profile page input theme styles */
+.profile-page input[type="text"],
+.profile-page input[type="email"] {
+  transition: all 0.3s ease;
+}
+
+.profile-page input[type="text"].bg-dark-green,
+.profile-page input[type="email"].bg-dark-green {
+  background-color: #0a0f0a !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+  -webkit-text-fill-color: white !important;
+}
+
+.profile-page input[type="text"].bg-white,
+.profile-page input[type="email"].bg-white {
+  background-color: white !important;
+  color: black !important;
+  border-color: #10b981 !important;
+  -webkit-text-fill-color: black !important;
+}
+
+/* Immediate theme application for profile inputs */
+.profile-page input[type="text"][data-theme="dark"],
+.profile-page input[type="email"][data-theme="dark"] {
+  background-color: #0a0f0a !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+  -webkit-text-fill-color: white !important;
+}
+
+.profile-page input[type="text"][data-theme="light"],
+.profile-page input[type="email"][data-theme="light"] {
+  background-color: white !important;
+  color: black !important;
+  border-color: #10b981 !important;
+  -webkit-text-fill-color: black !important;
+}
+
+/* Override autofill for data-theme inputs */
+input[data-theme="dark"]:-webkit-autofill,
+input[data-theme="dark"]:-webkit-autofill:hover,
+input[data-theme="dark"]:-webkit-autofill:focus,
+input[data-theme="dark"]:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0a0f0a inset !important;
+  -webkit-text-fill-color: white !important;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Sun, Moon, User, Users, BookOpen, Home, Heart, MapPin, Clock, Star, Edit, Trash2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { journalAPI, communityAPI, therapistsAPI, authAPI, healthCheck } from './services/api';
@@ -22,6 +22,7 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
         }}
         placeholder="What's on your mind today? (Minimum 10 characters)"
         className={`w-full h-32 p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+        style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
       />
       <p className="text-xs text-gray-500 mt-1">
         Journal entries must be at least 10 characters long
@@ -90,6 +91,7 @@ const JournalPage = ({ journalEntries, setSelectedEntry, isDarkMode, themeStyles
                 defaultValue={entry.content}
                 className={`w-full h-32 p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
                 placeholder="Edit your journal entry..."
+                style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
               />
               <div className="flex justify-end space-x-2 mt-3">
                 <button
@@ -262,6 +264,7 @@ const SignupPage = ({
             }}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Enter your full name"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
       </div>
@@ -274,6 +277,7 @@ const SignupPage = ({
             onChange={(e) => setSignupEmail(e.target.value)}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Enter your email"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
         </div>
@@ -286,6 +290,7 @@ const SignupPage = ({
             onChange={(e) => setSignupPassword(e.target.value)}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Create a password"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
         </div>
@@ -298,6 +303,7 @@ const SignupPage = ({
             onChange={(e) => setSignupConfirmPassword(e.target.value)}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Confirm your password"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
         </div>
@@ -354,6 +360,7 @@ const LoginPage = ({
             onChange={(e) => setLoginEmail(e.target.value)}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Enter your email"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
         </div>
@@ -366,6 +373,7 @@ const LoginPage = ({
             onChange={(e) => setLoginPassword(e.target.value)}
             className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
             placeholder="Enter your password"
+            style={{ backgroundColor: isDarkMode ? 'var(--dark-green)' : 'white', color: isDarkMode ? 'white' : 'black' }}
             required
           />
         </div>
@@ -416,12 +424,46 @@ const ProfilePage = ({
 }) => {
   console.log('🔍 ProfilePage render - profileData:', profileData);
   console.log('🔍 ProfilePage render - journal count:', profileData?.user?.stats?.journalEntriesCount);
+  console.log('🎨 ProfilePage render - isDarkMode:', isDarkMode, 'themeStyles:', themeStyles);
+  console.log('✏️ ProfilePage render - isEditing:', isEditing);
+  
+  // Refs for input elements
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  
+  // Force re-render when theme changes
+  useEffect(() => {
+    console.log('🎨 ProfilePage theme changed - isDarkMode:', isDarkMode);
+  }, [isDarkMode]);
+  
+  // Force input styles when editing starts or theme changes
+  useEffect(() => {
+    if (isEditing) {
+      console.log('✏️ Editing started - applying theme styles to inputs');
+      // Force a small delay to ensure inputs are rendered
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.style.backgroundColor = isDarkMode ? '#0a0f0a' : 'white';
+          nameInputRef.current.style.color = isDarkMode ? 'white' : 'black';
+          nameInputRef.current.style.borderColor = isDarkMode ? '#4b5563' : '#10b981';
+          nameInputRef.current.style.WebkitTextFillColor = isDarkMode ? 'white' : 'black';
+        }
+        if (emailInputRef.current) {
+          emailInputRef.current.style.backgroundColor = isDarkMode ? '#0a0f0a' : 'white';
+          emailInputRef.current.style.color = isDarkMode ? 'white' : 'black';
+          emailInputRef.current.style.borderColor = isDarkMode ? '#4b5563' : '#10b981';
+          emailInputRef.current.style.WebkitTextFillColor = isDarkMode ? 'white' : 'black';
+        }
+      }, 10);
+    }
+  }, [isEditing, isDarkMode]);
   
   return (
-  <div className="max-w-4xl mx-auto p-6">
+  <div className="max-w-4xl mx-auto p-6 profile-page">
     <div className="text-center mb-8">
       <h2 className="text-3xl font-bold mb-2">Your Profile</h2>
       <p className="opacity-80">Manage your account and preferences</p>
+      <p className="text-xs opacity-60 mt-2">Theme: {isDarkMode ? 'Dark' : 'Light'}</p>
     </div>
 
     <div className="grid md:grid-cols-2 gap-6">
@@ -438,23 +480,51 @@ const ProfilePage = ({
         
         {isEditing ? (
           <form onSubmit={handleProfileUpdate} className="space-y-4">
+            {/* Hidden inputs to ensure theme styles are applied */}
+            <input
+              type="hidden"
+              className={`${themeStyles.input}`}
+              style={{ 
+                backgroundColor: isDarkMode ? '#0a0f0a' : 'white', 
+                color: isDarkMode ? 'white' : 'black',
+                borderColor: isDarkMode ? '#4b5563' : '#10b981'
+              }}
+              data-theme={isDarkMode ? 'dark' : 'light'}
+            />
+            
             <div>
               <label className="block text-sm font-medium mb-2">Name</label>
               <input
+                ref={nameInputRef}
                 type="text"
                 name="name"
                 defaultValue={user?.name || ''}
                 className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+                style={{ 
+                  backgroundColor: isDarkMode ? '#0a0f0a' : 'white', 
+                  color: isDarkMode ? 'white' : 'black',
+                  borderColor: isDarkMode ? '#4b5563' : '#10b981',
+                  WebkitTextFillColor: isDarkMode ? 'white' : 'black'
+                }}
+                data-theme={isDarkMode ? 'dark' : 'light'}
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
               <input
+                ref={emailInputRef}
                 type="email"
                 name="email"
                 defaultValue={user?.email || ''}
                 className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500 ${themeStyles.input}`}
+                style={{ 
+                  backgroundColor: isDarkMode ? '#0a0f0a' : 'white', 
+                  color: isDarkMode ? 'white' : 'black',
+                  borderColor: isDarkMode ? '#4b5563' : '#10b981',
+                  WebkitTextFillColor: isDarkMode ? 'white' : 'black'
+                }}
+                data-theme={isDarkMode ? 'dark' : 'light'}
                 required
               />
             </div>
@@ -470,11 +540,15 @@ const ProfilePage = ({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Name</label>
-              <p className="p-3 bg-gray-50 rounded-lg">{user?.name || 'Not set'}</p>
+              <p className={`p-3 rounded-lg ${isDarkMode ? 'bg-dark-green border border-gray-600' : 'bg-gray-50 border border-green-200'}`}>
+                {user?.name || 'Not set'}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
-              <p className="p-3 bg-gray-50 rounded-lg">{user?.email || 'Not set'}</p>
+              <p className={`p-3 rounded-lg ${isDarkMode ? 'bg-dark-green border border-gray-600' : 'bg-gray-50 border border-green-200'}`}>
+                {user?.email || 'Not set'}
+              </p>
             </div>
           </div>
         )}
@@ -612,14 +686,18 @@ const JunoaApp = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Memoize theme-dependent styles to prevent re-renders
-  const themeStyles = useMemo(() => ({
-    input: isDarkMode 
-      ? 'bg-dark-green border-gray-600 text-white' 
-      : 'bg-white border-green-300',
-    container: isDarkMode 
-      ? 'bg-dark-green-light border-gray-700' 
-      : 'bg-white border-green-200'
-  }), [isDarkMode]);
+  const themeStyles = useMemo(() => {
+    const styles = {
+      input: isDarkMode 
+        ? 'bg-dark-green border-gray-600 text-white' 
+        : 'bg-white border-green-300',
+      container: isDarkMode 
+        ? 'bg-dark-green-light border-gray-700' 
+        : 'bg-white border-green-200'
+    };
+    console.log('🎨 Theme styles updated:', { isDarkMode, styles });
+    return styles;
+  }, [isDarkMode]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -1158,7 +1236,7 @@ const JunoaApp = () => {
         />;
       case 'profile':
         return <ProfilePage 
-          key="profile" 
+          key={`profile-${isDarkMode}`}
           user={user}
           profileData={profileData}
           isEditing={isEditing}
