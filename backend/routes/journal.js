@@ -152,9 +152,10 @@ router.post('/entries', auth, createEntryLimiter, createEntryValidation, async (
       // Use LLM to analyze the journal entry and get mood + AI comment
       const analysis = await llmService.analyzeJournalEntry(content);
       
-      // Update the journal entry with LLM-determined mood and AI comment
+      // Update the journal entry with LLM-determined mood, AI comment, and activities
       journalEntry.mood = analysis.mood;
       journalEntry.aiComment = analysis.aiComment;
+      journalEntry.aiActivities = analysis.activities || [];
       
       // Generate additional AI response for suggestions
       const aiResponse = await generateAIResponse(content, analysis.mood, user);
@@ -165,7 +166,8 @@ router.post('/entries', auth, createEntryLimiter, createEntryValidation, async (
       
       console.log('✅ Journal entry updated with LLM analysis:', {
         mood: analysis.mood,
-        aiCommentLength: analysis.aiComment.length
+        aiCommentLength: analysis.aiComment.length,
+        activitiesCount: analysis.activities?.length || 0
       });
     } catch (aiError) {
       console.error('AI response generation failed:', aiError);

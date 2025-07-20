@@ -30,6 +30,7 @@ npm install groq-sdk
 ### Journal Entry Analysis
 - **Mood Detection**: Automatically determines user's mood from 12 options
 - **AI Response**: Generates supportive, empathetic responses
+- **Suggested Activities**: Provides 2-3 personalized activities based on mood and content
 - **Sentiment Analysis**: Categorizes entries as positive, negative, or neutral
 
 ### Supported Moods
@@ -71,7 +72,7 @@ backend/
 ### LLM Service Methods
 - `analyzeJournalEntry(content)` - Main analysis function
 - `callGroqAPI(prompt)` - Makes API calls to Groq
-- `parseLLMResponse(response)` - Parses LLM response
+- `parseLLMResponse(response)` - Parses LLM response (mood, comment, activities)
 - `testConnection()` - Tests API connectivity
 
 ## Error Handling

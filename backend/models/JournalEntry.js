@@ -46,6 +46,10 @@ const journalEntrySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  aiActivities: [{
+    type: String,
+    trim: true
+  }],
   aiResponse: {
     content: String,
     sentiment: {

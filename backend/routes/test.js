@@ -28,7 +28,11 @@ router.post('/llm', auth, async (req, res) => {
       message: 'LLM test completed successfully',
       data: {
         originalContent: content,
-        analysis: analysis
+        analysis: {
+          mood: analysis.mood,
+          aiComment: analysis.aiComment,
+          activities: analysis.activities
+        }
       }
     });
     
@@ -72,5 +76,7 @@ router.get('/llm/connection', auth, async (req, res) => {
     });
   }
 });
+
+
 
 module.exports = router; 

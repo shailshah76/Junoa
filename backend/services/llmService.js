@@ -30,7 +30,8 @@ class LLMService {
       
       console.log('✅ Journal analysis completed:', {
         mood: parsedResponse.mood,
-        aiCommentLength: parsedResponse.aiComment.length
+        aiCommentLength: parsedResponse.aiComment.length,
+        activitiesCount: parsedResponse.activities?.length || 0
       });
       
       return parsedResponse;
@@ -108,7 +109,7 @@ Journal Entry: "${journalContent}"`;
         ],
         model: this.model,
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: 500,
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -135,9 +136,31 @@ Journal Entry: "${journalContent}"`;
       const mood = moodMatch ? moodMatch[1].toLowerCase() : 'reflective';
       
       // Extract AI comment
-      const responseMatch = response.match(/RESPONSE:\s*(.+)/i);
+      const responseMatch = response.match(/RESPONSE:\s*(.+?)(?=\nSUGGESTED ACTIVITIES:|$)/is);
       const aiComment = responseMatch ? responseMatch[1].trim() : 
         'Thank you for sharing your thoughts. I appreciate your openness and courage in expressing yourself.';
+      
+      // Extract activities
+      const activitiesMatch = response.match(/SUGGESTED ACTIVITIES:\s*([\s\S]*?)(?=\n\n|$)/i);
+      let activities = [];
+      if (activitiesMatch) {
+        // Split by lines and clean up
+        activities = activitiesMatch[1]
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.startsWith('-') || line.startsWith('•'))
+          .map(line => line.replace(/^[-•]\s*/, '').trim())
+          .filter(line => line.length > 0);
+      }
+      
+      // If no activities found, provide default ones
+      if (activities.length === 0) {
+        activities = [
+          'Take a few deep breaths and practice mindful breathing',
+          'Go for a short walk to clear your mind',
+          'Write down three things you\'re grateful for today'
+        ];
+      }
       
       // Validate mood
       const validMoods = ['calm', 'reflective', 'anxious', 'excited', 'sad', 'grateful', 'stressed', 'hopeful', 'confused', 'angry', 'peaceful', 'overwhelmed'];
@@ -145,13 +168,19 @@ Journal Entry: "${journalContent}"`;
       
       return {
         mood: validatedMood,
-        aiComment: aiComment
+        aiComment: aiComment,
+        activities: activities
       };
     } catch (error) {
       console.error('❌ Error parsing LLM response:', error);
       return {
         mood: 'reflective',
-        aiComment: 'Thank you for sharing your thoughts. I appreciate your openness and courage in expressing yourself.'
+        aiComment: 'Thank you for sharing your thoughts. I appreciate your openness and courage in expressing yourself.',
+        activities: [
+          'Take a few deep breaths and practice mindful breathing',
+          'Go for a short walk to clear your mind',
+          'Write down three things you\'re grateful for today'
+        ]
       };
     }
   }

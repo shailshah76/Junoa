@@ -63,7 +63,7 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
 
     <div className="mb-8">
       <h3 className="text-2xl font-semibold mb-4">AI Responses</h3>
-      <p className="opacity-80">Our AI companion is here to support you. After you write, you'll receive personalized insights and encouragement.</p>
+      <p className="opacity-80">Our AI companion is here to support you. After you write, you'll receive personalized insights, encouragement, and helpful activities to support your mental well-being.</p>
     </div>
 
     <div>
@@ -79,7 +79,13 @@ const HomePage = ({ journalEntry, setJournalEntry, handleJournalSubmit, journalE
               <div className="w-20 h-20 bg-amber-300 rounded-full opacity-60"></div>
             </div>
             <p className="text-sm mb-2">{entry.preview}</p>
-            <p className="text-xs opacity-60">{entry.date}</p>
+            <p className="text-xs opacity-60 mb-2">{entry.date}</p>
+            {entry.aiActivities && entry.aiActivities.length > 0 && (
+              <div className="flex items-center space-x-1 text-xs text-green-600">
+                <span>💡</span>
+                <span>{entry.aiActivities.length} activities</span>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -190,7 +196,13 @@ const JournalPage = ({ journalEntries, setSelectedEntry, isDarkMode, themeStyles
                 onClick={() => setSelectedEntry(entry)}
                 className="cursor-pointer"
               >
-                <p className="opacity-80">{entry.preview}</p>
+                <p className="opacity-80 mb-2">{entry.preview}</p>
+                {entry.aiActivities && entry.aiActivities.length > 0 && (
+                  <div className="flex items-center space-x-1 text-xs text-green-600">
+                    <span>💡</span>
+                    <span>{entry.aiActivities.length} suggested activities</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -677,7 +689,21 @@ const EntryModal = ({ entry, onClose, isDarkMode, themeStyles }) => (
       
       <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-dark-green-lighter' : 'bg-green-50'}`}>
         <h4 className="font-semibold mb-2 text-green-600">AI Companion Response</h4>
-        <p className="text-sm">{entry.aiComment}</p>
+        <p className="text-sm mb-4">{entry.aiComment}</p>
+        
+        {entry.aiActivities && entry.aiActivities.length > 0 && (
+          <div className="mt-4">
+            <h5 className="font-semibold mb-2 text-green-600">Suggested Activities</h5>
+            <ul className="space-y-2">
+              {entry.aiActivities.map((activity, index) => (
+                <li key={index} className="flex items-start space-x-2">
+                  <span className="text-green-500 mt-1">•</span>
+                  <span className="text-sm">{activity}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   </div>
